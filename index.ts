@@ -48,6 +48,8 @@ function handleTimeInput(ctx: any, type: string) {
       userTimes.set(userId, { morning: '', night: '' });
     }
 
+    console.log(type + ': ' + ctx.message.text);
+
     ctx.reply(`${type === 'morning' ? 'Время подъёма' : 'Время слипа'} установлено на ${ctx.message.text}`);
     scheduleMessage(userId, ctx.message.text, type === 'morning' ? morningMessages[Math.floor(Math.random() * morningMessages.length)] 
       : nightMessages[Math.floor(Math.random() * nightMessages.length)] , type, ctx);
