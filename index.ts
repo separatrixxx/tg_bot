@@ -1,80 +1,91 @@
-import { Telegraf, Markup } from 'telegraf';
+import { Telegraf, Markup, Context } from 'telegraf';
+import { getMessages, getMorningMessages, getNightMessages } from './helpers/messages.helper';
+import schedule from 'node-schedule';
 
 
-const bot = new Telegraf('6891725099:AAEQHVabrJh2ZxV_vKDBKnJLTJG8lWdBYFU'); // Здесь используйте свой токен
+const bot = new Telegraf('6891725099:AAEQHVabrJh2ZxV_vKDBKnJLTJG8lWdBYFU');
+
+const cuteMessages = getMessages();
+const morningMessages = getMorningMessages();
+const nightMessages = getNightMessages();
+
+function sendCuteMessage(ctx: Context) {
+  const message = cuteMessages[Math.floor(Math.random() * cuteMessages.length)];
+  ctx.reply(message);
+}
+
+const userTimes = new Map<number, { morning: string, night: string }>();
+// Добавляем карту состояний для отслеживания, ожидает ли пользователь установки времени утром или вечером.
+const userStates = new Map<number, string>();
 
 bot.start((ctx) => ctx.reply('Привет! Нажми на кнопку ниже, чтобы получить милую фразу.', Markup.inlineKeyboard([
   Markup.button.callback('Получить милую фразу', 'get_cute_message')
 ])));
 
-const cuteMessages = [
-  "Ты заставляешь моё сердце биться быстрее.",
-  "С тобой я забываю обо всём на свете.",
-  "Ты — моя вселенная.",
-  "Каждый момент с тобой — это подарок.",
-  "Твоя улыбка освещает мою жизнь.",
-  "Я не могу представить свою жизнь без тебя.",
-  "Ты делаешь каждый день лучше.",
-  "Твоя красота захватывает дух.",
-  "Ты моя мечта, сбывшаяся.",
-  "С тобой я чувствую себя настоящим.",
-  "Ты моя причина для счастья.",
-  "Ты заслуживаешь всего самого лучшего в этом мире.",
-  "Ты моё сокровище.",
-  "С тобой я чувствую себя дома.",
-  "Ты моя безопасная гавань.",
-  "Я всегда буду рядом, когда тебе меня нужно.",
-  "Ты моя половинка.",
-  "Ты вдохновляешь меня быть лучше.",
-  "Ты самый ценный человек в моей жизни.",
-  "С тобой время летит незаметно.",
-  "Я люблю тебя больше, чем вчера, но меньше, чем завтра.",
-  "Ты мой лучший выбор.",
-  "Спасибо, что ты есть.",
-  "Ты моя вечная влюблённость.",
-  "Ты красива, внутри и снаружи.",
-  "Я всегда буду твоим поклонником.",
-  "Ты мой источник вдохновения.",
-  "С тобой я нахожу мир.",
-  "Ты мой свет в темноте.",
-  "Ты моё любимое место в мире.",
-  "Ты прекрасна, даже когда ты не стараешься.",
-  "Я готов бороться за тебя.",
-  "Ты мой рай.",
-  "Ты — моя судьба.",
-  "Я всегда буду тебе верен.",
-  "Мне нравится всё в тебе.",
-  "Ты моя вечная весна.",
-  "Ты — моя последняя мысль перед сном.",
-  "Ты мой компас.",
-  "Я готов путешествовать по миру только с тобой.",
-  "Ты мой лучший день.",
-  "Я хочу дарить тебе счастье каждый день.",
-  "Ты моя муза.",
-  "Мир кажется лучше, когда ты рядом.",
-  "Ты моё утреннее солнце.",
-  "Ты мой вечерний звездопад.",
-  "Ты моя любовь навеки.",
-  "Ты мой истинный выбор.",
-  "С тобой каждый день — приключение.",
-  "Ты мой особенный человек.",
-  "Ты моя дорога домой.",
-  "Я вижу в тебе всё, что мне нужно.",
-  "Ты моя магия.",
-  "Ты мой источник радости.",
-  "Я хочу делить с тобой каждый момент.",
-  "Ты мой мир.",
-  "Ты мой лучший друг и любовь.",
-  "Ты мой покой.",
-  "Ты моя мечта каждую ночь.",
-  "Ты мой источник силы.",
-  "Ты мой кусочек рая на земле.",
-];
+bot.command('set_morning', (ctx) => {
+  userStates.set(ctx.from.id, 'morning'); // Устанавливаем состояние пользователя на 'morning'
+  ctx.reply('Введите время, когда вы планируете проснуться (в формате HH:mm)');
+});
 
-function sendCuteMessage(ctx: any) {
-  const message = cuteMessages[Math.floor(Math.random() * cuteMessages.length)];
-  ctx.reply(message);
+bot.command('set_night', (ctx) => {
+  userStates.set(ctx.from.id, 'night'); // Устанавливаем состояние пользователя на 'night'
+  ctx.reply('Введите время, когда вы планируете лечь спать (в формате HH:mm)');
+});
+
+bot.on('text', (ctx) => {
+  const state = userStates.get(ctx.from.id);
+  if (state) {
+    handleTimeInput(ctx, state);
+    userStates.delete(ctx.from.id); // Удаляем состояние после обработки ввода времени
+  }
+});
+
+function handleTimeInput(ctx: any, type: string) {
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  if (timeRegex.test(ctx.message?.text)) {
+    const userId = ctx.from.id;
+    if (!userTimes.has(userId)) {
+      userTimes.set(userId, { morning: '', night: '' });
+    }
+
+    ctx.reply(`${type === 'morning' ? 'Время подъёма' : 'Время слипа'} установлено на ${ctx.message.text}`);
+    scheduleMessage(userId, ctx.message.text, type === 'morning' ? morningMessages[Math.floor(Math.random() * morningMessages.length)] 
+      : nightMessages[Math.floor(Math.random() * nightMessages.length)] , type, ctx);
+  } else {
+    ctx.reply('Пожалуйста, введите время в правильном формате (HH:mm).');
+  }
 }
+
+function scheduleMessage(userId: number, time: string, message: string, type: string, ctx: Context) {
+  const [hour, minute] = time.split(':').map(Number);
+  schedule.scheduleJob(`${minute} ${hour} * * *`, () => {
+    ctx.telegram.sendMessage(userId, message);
+    if (type === 'morning') {
+      const nightTime = userTimes.get(userId)?.night;
+
+      if (nightTime) {
+        sendCuteMessagesUntilNight(userId, time, nightTime, ctx);
+      }
+    }
+  });
+}
+
+function sendCuteMessagesUntilNight(userId: number, morningTime: string, nightTime: string, ctx: Context) {
+  const [morningHour] = morningTime.split(':').map(Number);
+  const [nightHour] = nightTime?.split(':').map(Number);
+  let currentHour = morningHour + 1;
+  while (currentHour < nightHour) {
+    schedule.scheduleJob(`${currentHour} * * *`, () => {
+      ctx.telegram.sendMessage(userId, cuteMessages[Math.floor(Math.random() * cuteMessages.length)]);
+    });
+    currentHour++;
+  }
+}
+
+bot.command('reset_times', (ctx) => {
+  userTimes.delete(ctx.from.id);
+  ctx.reply('Время сброшено');
+});
 
 bot.command('get_milota', sendCuteMessage);
 bot.action('get_cute_message', sendCuteMessage);

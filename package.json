@@ -11,7 +11,11 @@
   "keywords": [],
   "dependencies": {
     "@types/node": "^20.11.16",
+    "node-schedule": "^2.1.1",
     "telegraf": "^4.15.3",
     "typescript": "^5.3.3"
+  },
+  "devDependencies": {
+    "@types/node-schedule": "^2.1.5"
   }
 }
