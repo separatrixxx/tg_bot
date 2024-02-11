@@ -1,3 +1,3 @@
 # Бот для отправки милых сообщений
 
-Установка: `npx ts-node index.ts`
+Запуск: `npx ts-node index.ts`
