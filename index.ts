@@ -3,7 +3,7 @@ import { getMessages, getMorningMessages, getNightMessages } from './helpers/mes
 import schedule from 'node-schedule';
 
 
-const bot = new Telegraf('6891725099:AAEQHVabrJh2ZxV_vKDBKnJLTJG8lWdBYFU');
+const bot = new Telegraf('bot_key');
 
 const cuteMessages = getMessages();
 const morningMessages = getMorningMessages();
